@@ -1,0 +1,59 @@
+ingredient_id,name_en,name_ar,unit,usda_description,shelf_life_days,supplier_id,base_cost_usd
+espresso_beans,Espresso beans,حبوب إسبريسو,g,"Beverages, coffee, brewed, espresso, restaurant-prepared",90,SUP_COFFEE,0.02
+filter_coffee_beans,Filter coffee beans,بن مقطّر,g,"Beverages, coffee, brewed, breakfast blend",90,SUP_COFFEE,0.016
+arabic_coffee_beans,Light-roast Arabic coffee beans,بن عربي شقراء,g,"Beverages, coffee, brewed, prepared with tap water",90,SUP_COFFEE,0.014
+cardamom,Cardamom,هيل,g,"Spices, cardamom",365,SUP_TEA_SPICE,0.03
+saffron,Saffron,زعفران,g,"Spices, saffron",730,SUP_TEA_SPICE,5.0
+milk,Fresh milk,حليب طازج,ml,"Milk, whole, 3.25% milkfat, with added vitamin D",7,SUP_DAIRY,0.0012
+condensed_milk,Sweetened condensed milk,حليب مكثف محلّى,g,"Milk, canned, condensed, sweetened",365,SUP_DAIRY,0.003
+black_tea,Black tea leaves,شاي أسود,g,"Beverages, tea, black, brewed, prepared with tap water",365,SUP_TEA_SPICE,0.008
+green_tea,Green tea leaves,شاي أخضر,g,"Beverages, tea, green, brewed, regular",365,SUP_TEA_SPICE,0.012
+dried_mint,Dried mint,نعناع مجفف,g,"Spearmint, dried",180,SUP_TEA_SPICE,0.01
+hibiscus,Dried hibiscus,كركديه مجفف,g,"Beverages, tea, hibiscus, brewed",365,SUP_TEA_SPICE,0.009
+sahlab_powder,Sahlab powder,بودرة سحلب,g,Cornstarch,365,SUP_TEA_SPICE,0.006
+cinnamon,Ground cinnamon,قرفة مطحونة,g,"Spices, cinnamon, ground",365,SUP_TEA_SPICE,0.01
+ginger,Ground ginger,زنجبيل مطحون,g,"Spices, ginger, ground",365,SUP_TEA_SPICE,0.01
+sugar,Sugar,سكر,g,"Sugars, granulated",730,SUP_BAKERY,0.0009
+dark_chocolate,Dark chocolate,شوكولاتة داكنة,g,"Chocolate, dark, 70-85% cacao solids",365,SUP_BAKERY,0.012
+caramel_sauce,Caramel sauce,صوص كراميل,ml,"Toppings, butterscotch or caramel",365,SUP_TEA_SPICE,0.008
+hazelnut_syrup,Hazelnut syrup,شراب البندق,ml,,365,SUP_TEA_SPICE,0.008
+vanilla_syrup_sf,Sugar-free vanilla syrup,شراب فانيلا خالٍ من السكر,ml,,365,SUP_TEA_SPICE,0.009
+chocolate_sauce,Chocolate sauce,صوص شوكولاتة,ml,"Syrups, chocolate, fudge-type",365,SUP_TEA_SPICE,0.008
+hot_cup,Hot cup with lid,كوب حار مع غطاء,unit,,3650,SUP_PACKAGING,0.1
+cold_cup,Cold cup with lid,كوب بارد مع غطاء,unit,,3650,SUP_PACKAGING,0.12
+croissant_dough,Frozen croissant dough,عجينة كرواسون مجمّدة,unit,"Croissants, butter",90,SUP_BAKERY,0.35
+flour,Wheat flour,دقيق القمح,g,"Wheat flour, white, all-purpose, enriched, bleached",180,SUP_BAKERY,0.0006
+semolina,Semolina,سميد,g,"Semolina, enriched",180,SUP_BAKERY,0.0009
+butter,Butter,زبدة,g,"Butter, without salt",30,SUP_DAIRY,0.008
+eggs,Eggs,بيض,unit,"Egg, whole, raw, fresh",21,SUP_DAIRY,0.2
+date_paste,Date paste,عجوة التمر,g,"Dates, deglet noor",180,SUP_BAKERY,0.004
+pistachios,Pistachios,فستق حلبي,g,"Nuts, pistachio nuts, raw",120,SUP_BAKERY,0.028
+walnuts,Walnuts,جوز,g,"Nuts, walnuts, english",120,SUP_BAKERY,0.012
+almonds,Almonds,لوز,g,"Nuts, almonds",120,SUP_BAKERY,0.01
+sesame,Sesame seeds,سمسم,g,"Seeds, sesame seeds, whole, dried",180,SUP_BAKERY,0.004
+zaatar,Za'atar,زعتر,g,"Spices, thyme, dried",180,SUP_TEA_SPICE,0.012
+olive_oil,Olive oil,زيت زيتون,ml,"Oil, olive, salad or cooking",365,SUP_BAKERY,0.008
+sku_beans_brazilian_organic,Organic Brazilian Beans (250 g),بن برازيلي عضوي (250 غ),unit,,365,SUP_RETAIL,9.9
+sku_beans_house_blend,House Blend Beans (250 g),خلطة البيت - بن (250 غ),unit,,365,SUP_RETAIL,9.9
+sku_beans_espresso_roast,Espresso Roast Beans (250 g),بن إسبريسو محمّص (250 غ),unit,,365,SUP_RETAIL,8.1125
+sku_beans_premium_espresso,Premium Espresso Beans (250 g),بن إسبريسو فاخر (250 غ),unit,,365,SUP_RETAIL,11.2475
+sku_beans_colombian,Colombian Medium Roast (250 g),بن كولومبي تحميص متوسط (250 غ),unit,,365,SUP_RETAIL,8.25
+sku_beans_ethiopian,Ethiopian Beans (250 g),بن إثيوبي (250 غ),unit,,365,SUP_RETAIL,11.55
+sku_beans_khawlani,Khawlani Beans (250 g),بن خولاني (250 غ),unit,,365,SUP_RETAIL,10.8625
+sku_beans_saffron_arabic_blend,Saffron Arabic Coffee Blend (500 g),خلطة قهوة عربية بالزعفران (500 غ),unit,,365,SUP_RETAIL,24.75
+sku_beans_decaf,Decaf Blend (250 g),خلطة منزوعة الكافيين (250 غ),unit,,365,SUP_RETAIL,12.375
+sku_beans_green,Green Coffee Beans (500 g),بن أخضر (500 غ),unit,,365,SUP_RETAIL,5.5
+sku_pack_hibiscus,Dried Hibiscus (200 g),كركديه مجفف (200 غ),unit,,365,SUP_RETAIL,4.9225
+sku_pack_dried_mint,Dried Mint (100 g),نعناع مجفف (100 غ),unit,,365,SUP_RETAIL,4.9225
+sku_pack_black_tea,Black Tea (250 g),شاي أسود (250 غ),unit,,365,SUP_RETAIL,4.9225
+sku_pack_earl_grey,Earl Grey Tea (250 g),شاي إيرل غراي (250 غ),unit,,365,SUP_RETAIL,4.9225
+sku_pack_green_tea,Green Tea (250 g),شاي أخضر (250 غ),unit,,365,SUP_RETAIL,5.0875
+sku_pack_karak_mix,Karak Spice Mix (200 g),خلطة بهارات الكرك (200 غ),unit,,365,SUP_RETAIL,4.9225
+sku_pack_saffron_karak_mix,Saffron Karak Mix (200 g),خلطة كرك بالزعفران (200 غ),unit,,365,SUP_RETAIL,5.225
+sku_pack_cardamom_tea,Cardamom Tea Blend (200 g),خلطة شاي بالهيل (200 غ),unit,,365,SUP_RETAIL,6.0225
+sku_pack_dark_drinking_chocolate,Dark Drinking Chocolate (250 g),شوكولاتة داكنة للشرب (250 غ),unit,,365,SUP_RETAIL,3.52
+sku_pack_sahlab_mix,Sahlab Mix (250 g),خلطة سحلب (250 غ),unit,,365,SUP_RETAIL,4.18
+sku_pack_spiced_chocolate,Spiced Hot Chocolate Mix (250 g),خلطة شوكولاتة ساخنة بالبهارات (250 غ),unit,,365,SUP_RETAIL,7.3315
+sku_merch_tshirt,Sufra T-shirt,تيشيرت سُفرة,unit,,365,SUP_RETAIL,15.4
+sku_merch_mug,Sufra Mug,كوب سُفرة,unit,,365,SUP_RETAIL,6.6
+sku_merch_travel_cup,Sufra Travel Cup,كوب سفر سُفرة,unit,,365,SUP_RETAIL,7.7

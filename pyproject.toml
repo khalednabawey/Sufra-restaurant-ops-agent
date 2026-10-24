@@ -1,0 +1,46 @@
+[project]
+name = "arabic-restaurant-ops-agent"
+version = "0.1.0"
+description = "Bilingual (Arabic/English) operations agent for a café-and-bakery chain: role-scoped MCP tools, human approval for writes, and an eval suite in CI."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "holidays>=0.107",
+    "mcp>=2.3.0",
+    "pandas>=3.1.0",
+    "psycopg[binary]>=3.3.6",
+    "pyarrow>=26.0.0",
+    "pyjwt>=2.15.1",
+    "python-dotenv>=1.2.4",
+    "pyyaml>=6.0.3",
+    "sentence-transformers>=6.2.0",
+    "torch>=2.14.1",
+]
+
+[dependency-groups]
+dev = [
+    "openpyxl>=3.1.5",
+    "pytest>=9.1.1",
+    "ruff>=0.17.2",
+]
+
+# CPU-only PyTorch (for sentence-transformers) on every platform, so Docker and CI
+# don't pull the CUDA wheels.
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

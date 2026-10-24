@@ -1,0 +1,31 @@
+ingredient_id,fdc_id,description,food_category,data_type
+espresso_beans,171891,"Beverages, coffee, brewed, espresso, restaurant-prepared",Beverages,sr_legacy_food
+filter_coffee_beans,171881,"Beverages, coffee, brewed, breakfast blend",Beverages,sr_legacy_food
+arabic_coffee_beans,171890,"Beverages, coffee, brewed, prepared with tap water",Beverages,sr_legacy_food
+cardamom,170919,"Spices, cardamom",Spices and Herbs,sr_legacy_food
+saffron,170934,"Spices, saffron",Spices and Herbs,sr_legacy_food
+milk,171265,"Milk, whole, 3.25% milkfat, with added vitamin D",Dairy and Egg Products,sr_legacy_food
+condensed_milk,171275,"Milk, canned, condensed, sweetened",Dairy and Egg Products,sr_legacy_food
+black_tea,173227,"Beverages, tea, black, brewed, prepared with tap water",Beverages,sr_legacy_food
+green_tea,171917,"Beverages, tea, green, brewed, regular",Beverages,sr_legacy_food
+dried_mint,172239,"Spearmint, dried",Spices and Herbs,sr_legacy_food
+hibiscus,171946,"Beverages, tea, hibiscus, brewed",Beverages,sr_legacy_food
+sahlab_powder,169698,Cornstarch,Cereal Grains and Pasta,sr_legacy_food
+cinnamon,171320,"Spices, cinnamon, ground",Spices and Herbs,sr_legacy_food
+ginger,170926,"Spices, ginger, ground",Spices and Herbs,sr_legacy_food
+sugar,169655,"Sugars, granulated",Sweets,sr_legacy_food
+dark_chocolate,170273,"Chocolate, dark, 70-85% cacao solids",Sweets,sr_legacy_food
+caramel_sauce,168841,"Toppings, butterscotch or caramel",Sweets,sr_legacy_food
+chocolate_sauce,168835,"Syrups, chocolate, fudge-type",Sweets,sr_legacy_food
+croissant_dough,174987,"Croissants, butter",Baked Products,sr_legacy_food
+flour,168894,"Wheat flour, white, all-purpose, enriched, bleached",Cereal Grains and Pasta,sr_legacy_food
+semolina,169715,"Semolina, enriched",Cereal Grains and Pasta,sr_legacy_food
+butter,173430,"Butter, without salt",Dairy and Egg Products,sr_legacy_food
+eggs,171287,"Egg, whole, raw, fresh",Dairy and Egg Products,sr_legacy_food
+date_paste,171726,"Dates, deglet noor",Fruits and Fruit Juices,sr_legacy_food
+pistachios,170184,"Nuts, pistachio nuts, raw",Nut and Seed Products,sr_legacy_food
+walnuts,170187,"Nuts, walnuts, english",Nut and Seed Products,sr_legacy_food
+almonds,170567,"Nuts, almonds",Nut and Seed Products,sr_legacy_food
+sesame,170150,"Seeds, sesame seeds, whole, dried",Nut and Seed Products,sr_legacy_food
+zaatar,170938,"Spices, thyme, dried",Spices and Herbs,sr_legacy_food
+olive_oil,171413,"Oil, olive, salad or cooking",Fats and Oils,sr_legacy_food

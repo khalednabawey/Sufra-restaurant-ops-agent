@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "sufra": {
+      "command": "uv",
+      "args": ["run", "python", "-m", "mcp_server.server"]
+    }
+  }
+}
