@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 DATA = Path(__file__).parent
 BUILD = DATA / "build"
 TABLES = [  # parents before children
-    "branches", "calendar", "weather_daily", "menu_items", "source_product_map", "item_prices",
+    "branches", "branch_overheads", "calendar", "weather_daily", "menu_items", "source_product_map", "item_prices",
     "suppliers", "ingredients", "ingredient_costs", "recipes", "sales", "inventory_daily",
     "waste_events", "staff", "shifts", "reviews",
 ]

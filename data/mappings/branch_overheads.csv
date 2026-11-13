@@ -1,0 +1,17 @@
+branch_id,category,monthly_amount,currency,valid_from,note
+B1,rent,35000,SAR,2026-01-01,Olaya street-front café unit (about SAR 420k a year)
+B1,utilities,7000,SAR,2026-01-01,"Electricity (heavy summer AC), water, internet"
+B1,staff_benefits,14400,SAR,2026-01-01,"Fixed staff costs not in hourly wages: GOSI, housing, iqama and visa fees, medical insurance (13 staff)"
+B1,other,9000,SAR,2026-01-01,"Maintenance, marketing, POS and software, insurance, cleaning"
+B2,rent,32000,SAR,2026-01-01,Tahlia Street unit (about SAR 384k a year)
+B2,utilities,6500,SAR,2026-01-01,"Electricity, water, internet"
+B2,staff_benefits,12100,SAR,2026-01-01,"GOSI, housing, iqama and visa fees, medical insurance (11 staff)"
+B2,other,8000,SAR,2026-01-01,"Maintenance, marketing, POS and software, insurance, cleaning"
+B3,rent,220000,EGP,2026-01-01,Smouha unit on a main road
+B3,utilities,70000,EGP,2026-01-01,"Electricity, water, gas, internet"
+B3,staff_benefits,50000,EGP,2026-01-01,"Social insurance, transport and meal allowances (11 staff)"
+B3,other,100000,EGP,2026-01-01,"Maintenance, marketing, POS and software, insurance, cleaning"
+B4,rent,28000,SAR,2026-04-01,Al Malqa unit (smaller; opened 1 April 2026)
+B4,utilities,5000,SAR,2026-04-01,"Electricity, water, internet"
+B4,staff_benefits,8800,SAR,2026-04-01,"GOSI, housing, iqama and visa fees, medical insurance (8 staff)"
+B4,other,6500,SAR,2026-04-01,"Maintenance, marketing, POS and software, insurance, cleaning"

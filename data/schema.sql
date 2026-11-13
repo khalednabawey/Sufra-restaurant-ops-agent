@@ -4,9 +4,9 @@
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
-DROP VIEW IF EXISTS item_cost_history, inventory_costed, waste_costed, shift_costs;
+DROP VIEW IF EXISTS profit_daily, item_cost_history, inventory_costed, waste_costed, shift_costs;
 DROP FUNCTION IF EXISTS unit_cost_at;
-DROP TABLE IF EXISTS pending_actions, kb_chunks, reviews, shifts, staff, waste_events,
+DROP TABLE IF EXISTS branch_overheads, pending_actions, kb_chunks, reviews, shifts, staff, waste_events,
     inventory_daily, sales, recipes, ingredient_costs, ingredients, suppliers, item_prices,
     source_product_map, menu_items, weather_daily, calendar, branches CASCADE;
 
@@ -219,6 +219,68 @@ SELECT sh.*, st.full_name, st.job_role, st.currency,
        extract(epoch FROM sh.ends_at - sh.starts_at) / 3600 * st.hourly_rate
            * CASE WHEN sh.overtime THEN 1.5 ELSE 1 END AS cost
 FROM shifts sh JOIN staff st USING (staff_id);
+
+-- ─── Overheads and profit ──────────────────────────────────────────────
+
+-- Fixed monthly costs per branch (documented assumptions in data/mappings/branch_overheads.csv).
+-- The amount in force is the row with the latest valid_from on or before the day.
+CREATE TABLE branch_overheads (
+    branch_id       text NOT NULL REFERENCES branches,
+    category        text NOT NULL CHECK (category IN ('rent', 'utilities', 'staff_benefits', 'other')),
+    monthly_amount  numeric(12,2) NOT NULL CHECK (monthly_amount >= 0),
+    currency        char(3) NOT NULL CHECK (currency IN ('SAR', 'EGP')),
+    valid_from      date NOT NULL,
+    PRIMARY KEY (branch_id, category, valid_from)
+);
+
+-- Profit per branch and trading day, in the branch's currency. Food cost is the recipe cost of what
+-- was sold (stock used); waste is costed separately; overheads are spread evenly over the month.
+-- operating_profit = revenue − food − waste − labour − overheads (before tax and depreciation).
+CREATE VIEW profit_daily AS
+WITH days AS (
+    SELECT b.branch_id, b.currency, d::date AS day
+    FROM branches b
+    CROSS JOIN generate_series((SELECT min(sold_on) FROM sales), (SELECT max(sold_on) FROM sales),
+                               interval '1 day') d
+    WHERE d::date >= b.opened_on
+), s AS (
+    SELECT branch_id, sold_on AS day, sum(line_total) AS revenue, count(*) AS orders
+    FROM sales GROUP BY 1, 2
+), i AS (
+    SELECT branch_id, stock_date AS day, sum(used_cost) AS food_cost, sum(wasted_cost) AS waste_cost,
+           sum(used_cost + wasted_cost) AS stock_used_cost
+    FROM inventory_costed GROUP BY 1, 2
+), l AS (
+    SELECT branch_id, shift_date AS day, sum(cost) AS labour_cost,
+           coalesce(sum(hours) FILTER (WHERE overtime), 0) AS overtime_hours
+    FROM shift_costs GROUP BY 1, 2
+), o AS (
+    SELECT d.branch_id, d.day,
+           sum(x.monthly_amount / extract(day FROM date_trunc('month', d.day) + interval '1 month - 1 day'))
+               AS overheads
+    FROM days d
+    JOIN branch_overheads x ON x.branch_id = d.branch_id
+     AND x.valid_from = (SELECT max(y.valid_from) FROM branch_overheads y
+                         WHERE y.branch_id = x.branch_id AND y.category = x.category AND y.valid_from <= d.day)
+    GROUP BY 1, 2
+)
+SELECT d.branch_id, d.currency, d.day,
+       coalesce(s.revenue, 0)          AS revenue,
+       coalesce(s.orders, 0)           AS orders,
+       coalesce(i.food_cost, 0)        AS food_cost,
+       coalesce(i.waste_cost, 0)       AS waste_cost,
+       coalesce(i.stock_used_cost, 0)  AS stock_used_cost,
+       coalesce(l.labour_cost, 0)      AS labour_cost,
+       coalesce(l.overtime_hours, 0)   AS overtime_hours,
+       coalesce(o.overheads, 0)        AS overheads,
+       coalesce(s.revenue, 0) - coalesce(i.food_cost, 0) AS gross_profit,
+       coalesce(s.revenue, 0) - coalesce(i.food_cost, 0) - coalesce(i.waste_cost, 0)
+           - coalesce(l.labour_cost, 0) - coalesce(o.overheads, 0) AS operating_profit
+FROM days d
+LEFT JOIN s USING (branch_id, day)
+LEFT JOIN i USING (branch_id, day)
+LEFT JOIN l USING (branch_id, day)
+LEFT JOIN o USING (branch_id, day);
 
 -- ─── Reviews (loaded at runtime from Hugging Face, never committed) ────
 

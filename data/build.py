@@ -420,6 +420,15 @@ def build_reviews(rng: np.random.Generator) -> pd.DataFrame:
     return reviews
 
 
+def build_overheads() -> pd.DataFrame:
+    """Monthly fixed costs per branch, from the documented assumptions in mappings/branch_overheads.csv."""
+    overheads = pd.read_csv(MAPPINGS / "branch_overheads.csv")
+    wrong = overheads[overheads.currency != overheads.branch_id.map(BRANCH.currency)]
+    if not wrong.empty:
+        raise SystemExit(f"overheads in the wrong currency:\n{wrong}")
+    return overheads.drop(columns="note")
+
+
 def build_calendar() -> pd.DataFrame:
     rows = []
     for country in ("SA", "EG"):
@@ -540,6 +549,7 @@ def main() -> None:
     write("staff", staff)
     write("shifts", shifts)
     write("reviews", build_reviews(rng_for(seed, "reviews")))
+    write("branch_overheads", build_overheads())
 
     summary = summarise(sales, prices, recipes, costs, inv, waste, shifts, staff, facts)
     (BUILD / "planted_facts.json").write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")

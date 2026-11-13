@@ -103,3 +103,17 @@ SELECT 'b1_low_stock_trap',
            || array_to_string(array_agg(ingredient_id || ' ' || round(days, 2))
                                   FILTER (WHERE stock_date = '2026-06-30' AND days < 2), ', ')
 FROM cover;
+
+-- Food cost is in the normal café range (22–32% of revenue) at every branch over the half-year.
+SELECT 'food_cost_share_realistic' AS check_name,
+       bool_and(share BETWEEN 0.22 AND 0.32) AS passed,
+       string_agg(branch_id || '=' || round(100 * share, 1) || '%', ', ' ORDER BY branch_id) AS detail
+FROM (SELECT branch_id, sum(food_cost) / sum(revenue) AS share FROM profit_daily GROUP BY 1) f;
+
+-- The profit view adds up: revenue matches the sales table, and every branch is profitable over
+-- the half-year with an operating margin between 5% and 30%.
+SELECT 'profit_view_consistent',
+       (SELECT sum(revenue) FROM profit_daily) = (SELECT sum(line_total) FROM sales)
+       AND bool_and(margin BETWEEN 0.05 AND 0.30),
+       string_agg(branch_id || ' margin ' || round(100 * margin, 1) || '%', ', ' ORDER BY branch_id)
+FROM (SELECT branch_id, sum(operating_profit) / sum(revenue) AS margin FROM profit_daily GROUP BY 1) p;
