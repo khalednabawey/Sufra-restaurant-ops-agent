@@ -1,4 +1,4 @@
-.PHONY: setup raw data seed test lint db-up db-down db-reset db-shell mcp inspect tokens api ui-setup ui
+.PHONY: setup raw data seed test lint db-up db-down db-reset db-shell mcp inspect tokens api ui-setup ui eval eval-smoke
 
 # legacy-peer-deps works around an npm 11.2 install bug ("Cannot read properties of null (reading 'edgesOut')")
 INSPECTOR = npm_config_legacy_peer_deps=true npx -y @modelcontextprotocol/inspector@2.10.1 \
@@ -56,3 +56,10 @@ ui-setup:   ## install the chat UI's separate environment (Chainlit pins mcp<2)
 
 ui:         ## run the Chainlit chat UI on :8501 (needs `make api` running)
 	cd ui && uv run chainlit run app.py --port 8501
+
+PROVIDER ?= groq
+eval:       ## full eval suite on one provider: make eval PROVIDER=groq|openrouter|router
+	uv run python -m evals.run_evals --provider $(PROVIDER) --delay 2
+
+eval-smoke: ## the 20-case smoke set CI runs on every push
+	uv run python -m evals.run_evals --provider $(PROVIDER) --smoke --delay 2

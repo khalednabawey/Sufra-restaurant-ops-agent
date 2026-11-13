@@ -30,7 +30,7 @@ from agent.tools import WRITE_TOOLS, Toolbox
 from agent.verify import unverified_numbers
 from mcp_server.scope import read_token
 
-HISTORY_MESSAGES = 30
+HISTORY_MESSAGES = 20
 log = logging.getLogger("sufra.agent")
 
 

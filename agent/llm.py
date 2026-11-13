@@ -36,8 +36,10 @@ def _tag(provider: str, model: str) -> RunnableLambda:
 
 
 def primary(cfg: Settings) -> BaseChatModel:
+    # Alone (LLM_MODE=groq, for evals), Groq waits out its rate limits instead of failing over.
+    retries = max(cfg.primary_max_retries, 4) if cfg.mode == "groq" else cfg.primary_max_retries
     return ChatGroq(model=cfg.primary_model, api_key=cfg.groq_api_key, temperature=0,
-                    timeout=cfg.timeout_seconds, max_retries=cfg.primary_max_retries)
+                    timeout=cfg.timeout_seconds, max_retries=retries)
 
 
 def fallback(cfg: Settings) -> BaseChatModel:
@@ -56,9 +58,13 @@ def chat_model(tools: Sequence[Any] | None = None, cfg: Settings | None = None,
     second = fallback_model or fallback(cfg)
     if tools:
         first, second = first.bind_tools(tools), second.bind_tools(tools)
-    chain = (first | _tag("groq", cfg.primary_model)).with_fallbacks(
-        [second | _tag("openrouter", cfg.fallback_model)])
-    return chain
+    groq = first | _tag("groq", cfg.primary_model)
+    openrouter = second | _tag("openrouter", cfg.fallback_model)
+    if cfg.mode == "groq":
+        return groq
+    if cfg.mode == "openrouter":
+        return openrouter
+    return groq.with_fallbacks([openrouter])
 
 
 async def ainvoke(model: Runnable, messages: list, **kwargs: Any) -> AIMessage:

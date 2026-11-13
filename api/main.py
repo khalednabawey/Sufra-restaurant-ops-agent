@@ -20,9 +20,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from langgraph.types import Command
 from pydantic import BaseModel, Field
 
+from agent import tracing
 from agent.config import settings
 from agent.graph import build_graph
-from agent.prompts import NO_MODEL
+from agent.prompts import NO_MODEL, detect_language
 from agent.tools import Toolbox
 from mcp_server.db import database_url
 from mcp_server.demo_users import DEMO_USERS
@@ -89,9 +90,18 @@ def _thread(s: Session, thread_id: str | None) -> str:
     return thread_id
 
 
-def _config(s: Session, thread_id: str) -> dict:
+def _config(s: Session, thread_id: str, callbacks: list | None = None) -> dict:
     return {"configurable": {"thread_id": thread_id, "caller_token": s.token, "user_name": _user_name(s.scope)},
-            "recursion_limit": 25}
+            "recursion_limit": 25, "callbacks": callbacks or []}
+
+
+async def _run(s: Session, thread_id: str, payload, question: str | None, name: str) -> dict:
+    """One graph run inside a Langfuse trace (a no-op when tracing is off)."""
+    with tracing.turn(name, user_id=s.scope.user_id, session_id=thread_id, role=s.scope.role,
+                      language=detect_language(question) if question else None, question=question) as t:
+        result = await app.state.graph.ainvoke(payload, _config(s, thread_id, t.callbacks))
+        t.finish(result)
+    return result
 
 
 async def _reply(thread_id: str, result: dict) -> dict:
@@ -154,7 +164,7 @@ async def chat(body: ChatIn, s: Auth) -> dict:
     if state.next:
         raise HTTPException(409, "Confirm or cancel the pending request first.")
     try:
-        result = await graph.ainvoke({"messages": [("user", body.message)]}, _config(s, thread_id))
+        result = await _run(s, thread_id, {"messages": [("user", body.message)]}, body.message, "chat")
     except Exception as exc:  # last resort: never a half-answer
         raise HTTPException(503, NO_MODEL["en"]) from exc
     return await _reply(thread_id, result)
@@ -167,7 +177,8 @@ async def confirm(body: ConfirmIn, s: Auth) -> dict:
     state = await graph.aget_state(_config(s, thread_id))
     if not state.next:
         raise HTTPException(409, "Nothing is waiting for confirmation in this conversation.")
-    result = await graph.ainvoke(Command(resume={"confirm": body.confirm}), _config(s, thread_id))
+    result = await _run(s, thread_id, Command(resume={"confirm": body.confirm}), None,
+                        "confirm" if body.confirm else "cancel")
     return await _reply(thread_id, result)
 
 

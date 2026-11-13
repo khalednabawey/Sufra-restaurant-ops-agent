@@ -26,6 +26,11 @@ from mcp_server.scope import TOOL_ROLES
 
 NEVER_FOR_AGENT = frozenset({"decide_action"})
 WRITE_TOOLS = frozenset({"request_reorder", "propose_price_change"})
+MAX_RESULT_CHARS = 6000
+
+
+def _compact(content: Any) -> str:
+    return json.dumps(content, ensure_ascii=False, default=str, separators=(",", ":"))
 
 
 @dataclass
@@ -36,10 +41,25 @@ class ToolOutcome:
     content: dict[str, Any] | None  # structured result when ok
     error: str | None  # "not_permitted: ..." / "invalid_request: ..." when not ok
 
-    def for_model(self) -> str:
-        if self.ok:
-            return json.dumps(self.content, ensure_ascii=False, default=str)
-        return self.error or "error: the tool failed"
+    def for_model(self, max_chars: int = MAX_RESULT_CHARS) -> str:
+        """Compact JSON for the model. Long row lists are cut to fit `max_chars` (free-tier token
+        budgets are small: Groq allows 8,000 tokens a minute), with a note saying how to narrow it."""
+        if not self.ok:
+            return self.error or "error: the tool failed"
+        text = _compact(self.content)
+        rows = self.content.get("rows") if isinstance(self.content, dict) else None
+        if len(text) <= max_chars or not isinstance(rows, list) or len(rows) < 2:
+            return text
+        keep = len(rows)
+        while keep > 1:
+            keep = max(1, keep * 2 // 3)
+            trimmed = {**self.content, "rows": rows[:keep],
+                       "truncated": f"showing {keep} of {len(rows)} rows; ask for a shorter period, fewer "
+                                    f"branches or a coarser group_by (week, month, total) for the rest"}
+            text = _compact(trimmed)
+            if len(text) <= max_chars:
+                break
+        return text
 
 
 def _model_schema(tool) -> dict[str, Any]:
