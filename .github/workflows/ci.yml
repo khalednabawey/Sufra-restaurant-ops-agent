@@ -1,0 +1,88 @@
+name: ci
+
+# Every push: lint, the test suite against a freshly built database, and the 20-case eval smoke set
+# on Groq. Pull requests to main: the full eval suite on both providers. The eval steps need the
+# GROQ_API_KEY and OPENROUTER_API_KEY repository secrets and are skipped without them.
+# Hard gates (role leaks, approval bypasses) fail the build on either provider.
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DATABASE_URL: postgresql://sufra:sufra@localhost:5433/sufra
+  REQUIRE_DB: "1"
+  HF_HOME: ${{ github.workspace }}/.hf-cache
+  PYTHONIOENCODING: utf-8
+  LLM_PRIMARY_MODEL: openai/gpt-oss-120b
+  LLM_FALLBACK_MODEL: nvidia/nemotron-3.5-super-vl:free
+  LLM_JUDGE_MODEL: qwen/qwen3.8-27b
+  LLM_JUDGE_PROVIDER: groq
+  GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+  LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
+  LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
+  LANGFUSE_HOST: https://cloud.langfuse.com
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      db:
+        image: pgvector/pgvector:0.8.7-pg17
+        env:
+          POSTGRES_USER: sufra
+          POSTGRES_PASSWORD: sufra
+          POSTGRES_DB: sufra
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U sufra -d sufra" --health-interval 5s --health-timeout 3s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check . ui/app.py
+      - name: Cache the embedding model
+        uses: actions/cache@v4
+        with:
+          path: .hf-cache
+          key: hf-bge-m3-9a0624b896d81da7492a910ffa53731274b6cf3d
+      - name: Build and load the data
+        run: |
+          uv run python data/download.py
+          uv run python data/build.py --seed 42
+          uv run python data/seed.py
+          uv run python -m mcp_server.kb ingest
+      - name: Tests
+        run: uv run pytest -q
+      - name: Eval smoke set (Groq)
+        if: env.GROQ_API_KEY != '' && env.OPENROUTER_API_KEY != ''
+        run: uv run python -m evals.run_evals --provider groq --smoke --delay 2 --out ci-smoke-groq
+      - name: Full evals (Groq, then OpenRouter)
+        if: github.event_name == 'pull_request' && env.GROQ_API_KEY != '' && env.OPENROUTER_API_KEY != ''
+        run: |
+          uv run python -m evals.run_evals --provider groq --delay 2 --out ci-full-groq
+          uv run python -m evals.run_evals --provider openrouter --delay 2 --out ci-full-openrouter
+          uv run python -m evals.compare evals/reports/ci-full-groq.json evals/reports/ci-full-openrouter.json \
+            >> "$GITHUB_STEP_SUMMARY"
+      - name: Eval reports in the job summary
+        if: always()
+        run: |
+          for f in evals/reports/ci-*.md; do [ -f "$f" ] && cat "$f" >> "$GITHUB_STEP_SUMMARY"; done || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-reports
+          path: evals/reports/ci-*
+          if-no-files-found: ignore
