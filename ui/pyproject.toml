@@ -1,0 +1,9 @@
+[project]
+name = "sufra-ui"
+version = "0.1.0"
+description = "Chainlit chat UI for the Sufra ops agent. Separate environment: Chainlit pins mcp<2, the agent uses MCP 2.x."
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "chainlit>=2.12.0",
+    "httpx>=0.28.1",
+]

@@ -12,6 +12,7 @@ from tests.conftest import scope_of
 
 READ_TOOLS = {"branch_sales", "top_items", "item_margin", "low_stock_items", "waste_report", "labor_cost_ratio",
               "staff_schedule", "compare_branches", "reviews_summary", "search_sop", "pending_actions_list"}
+WRITE_TOOLS = {"request_reorder", "propose_price_change", "decide_action"}
 MAY = {"date_from": "2026-05-01", "date_to": "2026-05-31"}
 
 
@@ -26,12 +27,12 @@ def text(result) -> str:
     return " ".join(c.text for c in result.content if hasattr(c, "text"))
 
 
-def test_server_lists_the_eleven_read_tools():
+def test_server_lists_read_write_and_approval_tools():
     async def run():
         async with Client(mcp) as client:
             return await client.list_tools()
     tools = asyncio.run(run()).tools
-    assert {t.name for t in tools} == READ_TOOLS
+    assert {t.name for t in tools} == READ_TOOLS | WRITE_TOOLS
     assert all("caller_token" in t.input_schema["required"] for t in tools)
 
 

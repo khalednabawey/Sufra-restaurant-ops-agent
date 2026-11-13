@@ -3,10 +3,11 @@
 An Arabic and English operations assistant for **Sufra Café & Bakery (سُفرة)**, a fictional four-branch chain built on public data. Owners, area managers and branch managers ask about sales, stock, waste and staff in their own language. Each person sees only the data their role allows, and nothing changes until a human approves it.
 
 - **Access control lives in the tools, not the prompt.** Every MCP tool verifies the caller's signed token and filters SQL rows by their role and branches, so a prompt injection can't widen access.
-- **No invented numbers.** Every tool result carries a `query_summary`, and the agent's verify step (week 2) checks each number in an answer against the tool results.
+- **No invented numbers.** Every tool result carries a `query_summary`, and the agent's verify step checks each number in an answer against the tool results. A draft with an unsourced figure is rewritten once; if it still has one, the answer says so.
+- **Nothing changes without people.** Reorders and price changes only create pending requests: the requester confirms first, then the approver the SOPs name (area manager up to SAR 5,000, otherwise the owner) approves or rejects. The model is never given the approval tool.
 - **Evaluated on every push** (week 3). An eval suite fails the build if accuracy drops or data leaks across roles.
 
-> **Status: week 1 done** (data, database, MCP server with 11 read tools, knowledge base, tests). Next: the LangGraph agent, write tools with human approval, and the chat UI.
+> **Status: week 2 done.** Data, database, MCP server (11 read tools, 2 write tools, approvals), the LangGraph agent with Groq → OpenRouter fallback, the API and the Chainlit UI. Next (week 3): the eval suite, Langfuse tracing and CI.
 
 ## Run it locally
 
@@ -20,6 +21,15 @@ make data       # download weather and reviews, build every table (seed 42)
 make seed       # load PostgreSQL, embed the knowledge base (first run downloads BGE-M3, ~2.3 GB)
 make test
 ```
+
+Then put your `GROQ_API_KEY` and `OPENROUTER_API_KEY` in `.env` and start the agent:
+
+```bash
+make api        # FastAPI on http://localhost:8000 (docs at /docs)
+make ui         # Chainlit on http://localhost:8501 — pick a user from the menu at the top
+```
+
+The UI has its own environment (`ui/pyproject.toml`) because Chainlit pins `mcp<2` and the server uses the MCP 2.x SDK; it talks to the API over HTTP like any other client. On Windows, start the API with `make api` (or `uv run python -m api`), not plain `uvicorn`: psycopg's async driver needs a selector event loop there.
 
 The embedding model loads in a few minutes on CPU the first time a process uses it; searches then take well under a second. Once it's downloaded, `HF_HUB_OFFLINE=1` skips the Hugging Face update check.
 
@@ -47,21 +57,49 @@ In the inspector, call a tool and paste a token into `caller_token`. The demo us
 | `reviews_summary` | Review count, positive share, sample quotes | managers |
 | `search_sop` | SOPs, FDA extracts and the menu, filtered by role before ranking | everyone |
 | `pending_actions_list` | Actions waiting for the caller's approval, and their own requests | managers |
+| `request_reorder` | Creates a pending reorder with its amount and approver (nothing is ordered) | area and branch managers |
+| `propose_price_change` | Creates a pending price change; needs a written reason | owner, area manager |
+| `decide_action` | Approve or reject; called by the API on an approver's click, never offered to the model | owner, area manager |
 
 "Managers" means owner, area manager and branch manager, each limited to their own branches. A refusal comes back as an error that starts with `not_permitted:` and never says whether the data exists.
+
+## The agent
+
+```text
+START → guard ─(injection)→ refuse
+          └→ agent ⇄ tools        model picks MCP tools; write tools pause for the user's Confirm
+               └→ verify → END    every number in the draft must appear in a tool result
+```
+
+- **Scope travels outside the model.** The API puts the user's signed token in the run config; the tool adapter adds it to each MCP call and strips `caller_token` from the schemas the model sees. The model is shown only the tools its role may call, and the server checks again.
+- **Model router.** Every model call goes through Groq (`openai/gpt-oss-120b`) with OpenRouter (`nvidia/nemotron-3.5-super-vl:free`) as the fallback. Groq doesn't retry: on its free tier a rate limit asks the client to wait 10–30 s, and answering from the fallback is faster. Each answer reports which provider answered.
+- **Memory.** A Postgres checkpointer keeps each conversation; threads are named `<user_id>:<id>` and a user can only open their own. The model sees the last 30 messages.
+- **Two human steps for writes.** `request_reorder` and `propose_price_change` trigger a LangGraph interrupt; the UI shows Confirm / Cancel. A confirmed request is a `pending_actions` row routed per the SOPs. Only `POST /actions/{id}/decision` from the routed approver changes its status, and nobody approves their own reorder.
+
+| Endpoint | What it does |
+|---|---|
+| `POST /auth/demo-login` | Signed token for a demo user |
+| `POST /chat` | Ask a question (`thread_id` optional); returns the answer, provider, tools used and any pending requests, or `needs_confirmation` |
+| `POST /chat/confirm` | Confirm or cancel the request the agent proposed |
+| `GET /actions` | Requests waiting for you, and your own |
+| `POST /actions/{id}/decision` | Approve or reject (approvers only) |
 
 ## Repository
 
 ```text
 data/         sources, mappings, build.py, seed.py, schema.sql, checks.sql, SOPs  → data/README.md
 mcp_server/   server.py, scope.py (tokens + role checks), tools/, kb.py (knowledge-base ingest)
-tests/        scope and token rules, per-tool scope filters, the MCP server end to end, planted facts
-agent/ api/ ui/ evals/ deploy/   weeks 2–4
+agent/        graph.py (LangGraph), llm.py (Groq → OpenRouter), tools.py (MCP adapter), verify.py, prompts.py
+api/          main.py (FastAPI), __main__.py (launcher)
+ui/           app.py (Chainlit), its own pyproject.toml
+tests/        scope and token rules, per-tool scope filters, write tools and approvals, the agent graph
+              with a scripted model, fallback and number-check units, planted facts
+evals/ deploy/   weeks 3–4
 ```
 
 ## Stack
 
-Python 3.12 · PostgreSQL 17 + pgvector 0.8.7 · MCP Python SDK 2.3 · sentence-transformers 6.2 (BGE-M3) · FastAPI · LangGraph · Groq with OpenRouter fallback · Langfuse · Chainlit · Docker · GitHub Actions
+Python 3.12 · PostgreSQL 17 + pgvector 0.8.7 · MCP Python SDK 2.3 · sentence-transformers 6.2 (BGE-M3) · LangGraph 1.2 + langgraph-checkpoint-postgres 3.2 · langchain-groq 1.1 / langchain-openai 1.7 · FastAPI 0.162 · Chainlit 2.12 · Docker · Langfuse and GitHub Actions in week 3
 
 ## Data
 

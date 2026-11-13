@@ -9,6 +9,7 @@ whether the data exists.
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -33,6 +34,11 @@ TOOL_ROLES = {
     "reviews_summary": MANAGERS,
     "search_sop": EVERYONE,  # chunks are filtered by role
     "pending_actions_list": MANAGERS,
+    # Write tools only create pending actions (reorder and price change SOPs)
+    "request_reorder": frozenset({"area_manager", "branch_manager"}),
+    "propose_price_change": frozenset({"owner", "area_manager"}),
+    # Approvers only; the API calls this on a click, the agent never gets it
+    "decide_action": frozenset({"owner", "area_manager"}),
 }
 
 
@@ -84,11 +90,31 @@ def check_tool(scope: Scope, tool: str) -> None:
         raise NotPermitted("Your role doesn't have access to this information.")
 
 
+BRANCH_ALIASES = {"olaya": "B1", "العليا": "B1", "tahlia": "B2", "التحلية": "B2", "jeddah": "B2", "جدة": "B2",
+                  "smouha": "B3", "سموحة": "B3", "alexandria": "B3", "الإسكندرية": "B3", "malqa": "B4",
+                  "الملقا": "B4"}
+BRANCH_CODE = re.compile(r"\bB\s*-?\s*([1-4])\b", re.IGNORECASE)
+
+
+def normalize_branch(value: str) -> str:
+    """'B2', 'b2', 'B2 Tahlia', 'Tahlia' or 'التحلية' → 'B2'. Anything else is returned upper-cased
+    and fails the scope check."""
+    text = value.strip()
+    m = BRANCH_CODE.search(text)
+    if m:
+        return f"B{m.group(1)}"
+    lowered = text.lower()
+    for alias, code in BRANCH_ALIASES.items():
+        if alias in lowered:
+            return code
+    return text.upper()
+
+
 def branches_for(scope: Scope, requested: list[str] | None) -> list[str]:
     """The branches a query may read: the caller's whole scope, or the requested subset of it."""
     if not requested:
         return list(scope.branches)
-    wanted = list(dict.fromkeys(b.strip().upper() for b in requested))
+    wanted = list(dict.fromkeys(normalize_branch(b) for b in requested))
     if any(b not in scope.branches for b in wanted):
         raise NotPermitted("You don't have access to that branch.")
     return wanted

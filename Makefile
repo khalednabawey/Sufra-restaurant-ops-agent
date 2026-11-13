@@ -1,11 +1,12 @@
-.PHONY: setup raw data seed test lint db-up db-down db-reset db-shell mcp inspect tokens
+.PHONY: setup raw data seed test lint db-up db-down db-reset db-shell mcp inspect tokens api ui-setup ui
 
 # legacy-peer-deps works around an npm 11.2 install bug ("Cannot read properties of null (reading 'edgesOut')")
 INSPECTOR = npm_config_legacy_peer_deps=true npx -y @modelcontextprotocol/inspector@2.10.1 \
 	--config mcp-inspector.json --server sufra
 
-setup:      ## install Python dependencies into .venv
+setup:      ## install Python dependencies into .venv (and the UI's own .venv)
 	uv sync
+	cd ui && uv sync
 
 raw:        ## re-create the committed extracts in data/raw/ (not needed for a normal build)
 	uv run python data/fetch_sales.py
@@ -23,7 +24,7 @@ test:
 	uv run pytest
 
 lint:
-	uv run ruff check .
+	uv run ruff check . ui/app.py
 
 db-up:      ## start PostgreSQL + pgvector and wait until healthy
 	docker compose up -d --wait db
@@ -46,3 +47,12 @@ inspect:    ## open the MCP inspector on the server (paste a token from `make to
 
 tokens:     ## print a signed token for each demo user
 	uv run python -m mcp_server.demo_users
+
+api:        ## run the agent API on :8000 (Postgres checkpointer; CHECKPOINTER=memory to skip it)
+	uv run python -m api --port 8000
+
+ui-setup:   ## install the chat UI's separate environment (Chainlit pins mcp<2)
+	cd ui && uv sync
+
+ui:         ## run the Chainlit chat UI on :8501 (needs `make api` running)
+	cd ui && uv run chainlit run app.py --port 8501

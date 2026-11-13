@@ -1,4 +1,5 @@
-"""MCP server with Sufra's read tools.
+"""MCP server with Sufra's tools: 11 read tools, 2 write tools that only create pending requests,
+and `decide_action` for approvers.
 
 Every tool takes `caller_token`, a signed token that the application fills in for the signed-in
 user (the model never writes it). The server verifies it, checks the role may use the tool, and
@@ -27,8 +28,9 @@ from mcp_server.tools import actions, inventory, kb, reviews, sales, staff, wast
 mcp = MCPServer(
     "sufra-ops",
     instructions=(
-        "Read-only tools for Sufra Café & Bakery (4 branches: B1 Olaya and B4 Al Malqa in Riyadh, "
-        "B2 Tahlia in Jeddah, B3 Smouha in Alexandria). Data covers 2026-01-01 to 2026-06-30. "
+        "Tools for Sufra Café & Bakery; write tools only create pending requests for approval. "
+        "4 branches: B1 Olaya and B4 Al Malqa in Riyadh, "
+        "B2 Tahlia in Jeddah, B3 Smouha in Alexandria. Data covers 2026-01-01 to 2026-06-30. "
         "Every result carries a query_summary and notes; quote numbers only from results."
     ),
 )
@@ -154,6 +156,48 @@ def pending_actions_list(caller_token: Token,
                          status: Literal["pending", "approved", "rejected", "all"] = "pending") -> dict[str, Any]:
     """Reorders and price changes waiting for the caller's approval, and the ones the caller requested."""
     return _call("pending_actions_list", caller_token, actions.pending_actions_list, status=status)
+
+
+@mcp.tool()
+def request_reorder(caller_token: Token, branch_id: BranchId,
+                    ingredient: Annotated[str, Field(description="Ingredient id or name, e.g. 'milk' or 'حليب'.")],
+                    qty: Annotated[float, Field(gt=0, description="Quantity to order, in `unit`.")],
+                    unit: Annotated[Literal["g", "kg", "ml", "l", "unit"],
+                                    Field(description="Unit of qty: kg/g for dry goods, l/ml for liquids, "
+                                                      "unit for pieces.")],
+                    note: Annotated[str | None, Field(description="Optional reason or context.")] = None,
+                    ) -> dict[str, Any]:
+    """Request a reorder for one branch. Nothing is ordered: this creates a pending request that the
+    right approver (area manager up to SAR 5,000 in their area, otherwise the owner) must approve.
+    Returns the request with its amount and approver."""
+    return _call("request_reorder", caller_token, actions.request_reorder, branch_id=branch_id,
+                 ingredient=ingredient, qty=qty, unit=unit, note=note)
+
+
+@mcp.tool()
+def propose_price_change(caller_token: Token,
+                         item: Annotated[str, Field(description="Menu item id or name.")],
+                         new_price: Annotated[float, Field(gt=0, description="New menu price.")],
+                         reason: Annotated[str, Field(description="Written reason; required by policy.")],
+                         currency: Annotated[Literal["SAR", "EGP"] | None,
+                                             Field(description="Price list: SAR (B1, B2, B4) or EGP (B3). "
+                                                               "Omit if the caller has only one.")] = None,
+                         ) -> dict[str, Any]:
+    """Propose a menu price change. Prices don't change: this creates a pending request that only the
+    owner can approve; an approved price takes effect the next business day."""
+    return _call("propose_price_change", caller_token, actions.propose_price_change, item=item,
+                 new_price=new_price, reason=reason, currency=currency)
+
+
+@mcp.tool()
+def decide_action(caller_token: Token, action_id: int,
+                  decision: Literal["approved", "rejected"],
+                  note: Annotated[str | None, Field(description="Optional note for the requester.")] = None,
+                  ) -> dict[str, Any]:
+    """Approve or reject a pending action. Called by the application when an approver clicks
+    approve or reject; never offered to the assistant."""
+    return _call("decide_action", caller_token, actions.decide_action, action_id=action_id,
+                 decision=decision, note=note)
 
 
 def main() -> None:

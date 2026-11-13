@@ -17,6 +17,7 @@ from mcp_server.scope import (
     branches_for,
     check_tool,
     issue_token,
+    normalize_branch,
     read_token,
 )
 from tests.conftest import scope_of
@@ -107,3 +108,15 @@ def test_refusal_does_not_reveal_data():
 def test_invalid_scopes_are_refused(kwargs):
     with pytest.raises(ValueError):
         Scope(**kwargs)
+
+
+@pytest.mark.parametrize("given,expected", [("B2", "B2"), ("b2", "B2"), ("B2 Tahlia", "B2"), ("Tahlia", "B2"),
+                                            ("التحلية", "B2"), ("فرع العليا", "B1"), ("B4 Al Malqa", "B4")])
+def test_branch_names_map_to_ids(given, expected):
+    assert normalize_branch(given) == expected
+
+
+def test_branch_name_still_respects_scope():
+    with pytest.raises(NotPermitted):
+        branches_for(scope_of("u_bm_tahlia"), ["Olaya"])
+    assert branches_for(scope_of("u_bm_tahlia"), ["B2 Tahlia"]) == ["B2"]
